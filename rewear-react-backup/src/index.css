@@ -1,0 +1,204 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   RE:WEAR design tokens
+   Palette comes from the brief. Status tones are muted to sit inside it.
+   ------------------------------------------------------------------ */
+@theme {
+  --color-cream: #F7F3EC;
+  --color-beige: #E4D7CC;
+  --color-brown: #70584B;
+  --color-dark-brown: #30231D;
+  --color-muted-pink: #C98E7A;
+
+  /* status tones (all >= 4.5:1 on cream for text use) */
+  --color-moss: #5F7355;   /* approved, completed */
+  --color-brick: #A4493D;  /* rejected, cancelled, destructive */
+  --color-ochre: #8A5F1E;  /* pending, awaiting review */
+  --color-dusk: #55697A;   /* processing, shipped */
+
+  --font-serif: "Playfair Display", "Cormorant Garamond", Georgia, serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Guardrail: the brief asks for no heavily rounded cards. */
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
+
+  --ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* ------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------ */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-cream);
+    background-image: radial-gradient(ellipse at 12% 4%, rgb(255 255 255 / 55%), transparent 34rem);
+    color: var(--color-dark-brown);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body::before {
+    position: fixed;
+    z-index: 50;
+    pointer-events: none;
+    content: "";
+    inset: 0;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    font-variant-numeric: lining-nums;
+    text-wrap: balance;
+  }
+
+  p { text-wrap: pretty; }
+
+  /* Serif body copy (editorial articles) gets more line-height than sans. */
+  .prose-serif p { font-family: var(--font-serif); line-height: 1.8; }
+
+  ::selection {
+    background-color: var(--color-muted-pink);
+    color: var(--color-dark-brown);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-dark-brown);
+    outline-offset: 3px;
+  }
+
+  a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) { cursor: pointer; }
+
+  img, svg, video { max-width: 100%; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .product-photo {
+    isolation: isolate;
+    background-color: var(--color-beige);
+    background-image: radial-gradient(ellipse at 50% 35%, rgb(255 255 255 / 24%), transparent 70%);
+  }
+
+  .product-photo::after {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+    content: "";
+    inset: 0;
+    opacity: 0.08;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+  }
+}
+
+/* ------------------------------------------------------------------
+   Type scale (utilities, so responsive variants like md:display-lg work)
+   ------------------------------------------------------------------ */
+@utility display-xl {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: clamp(3.25rem, 11vw, 8.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.025em;
+}
+@utility display-lg {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+@utility display-md {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: clamp(1.875rem, 3.6vw, 2.75rem);
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+}
+@utility title {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 1.375rem;
+  line-height: 1.2;
+}
+@utility text-meta {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--color-brown);
+}
+
+/* ------------------------------------------------------------------
+   Layout helpers
+   ------------------------------------------------------------------ */
+@utility container-page {
+  @apply mx-auto w-full max-w-[1320px] px-5 sm:px-8 lg:px-12;
+}
+
+/* ------------------------------------------------------------------
+   Signature motif: the garment hang-tag.
+   Used for era / size / condition on product cards and detail pages.
+   ------------------------------------------------------------------ */
+@utility tag-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--color-brown) 55%, transparent);
+  background-color: var(--color-cream);
+  padding: 2px 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-brown);
+
+  /* the punched hole */
+  &::before {
+    content: "";
+    width: 0.3125rem;
+    height: 0.3125rem;
+    border-radius: 9999px;
+    border: 1px solid currentColor;
+    flex-shrink: 0;
+  }
+}
+
+@utility link-underline {
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-brown) 40%, transparent);
+  text-underline-offset: 4px;
+  transition: text-decoration-color 150ms var(--ease-soft);
+  &:hover { text-decoration-color: var(--color-dark-brown); }
+}
