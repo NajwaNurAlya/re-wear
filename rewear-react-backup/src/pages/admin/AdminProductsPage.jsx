@@ -19,7 +19,7 @@ const FILTERS = [
 export default function AdminProductsPage() {
   const [filter, setFilter] = useState(null);
   const { data = [], loading, error, reload } = useAsync(() => productService.listAllProducts(), []);
-  const soldIds = useMemo(() => data.filter((product) => product.status === PRODUCT_STATUS.SOLD).map((product) => product.id), [data]);
+  const soldIds = useMemo(() => (data ?? []).filter((product) => product.status === PRODUCT_STATUS.SOLD).map((product) => product.id), [data]);
   const soldIdKey = soldIds.join('|');
   const activeOrderLocks = useAsync(
     () => soldIds.length ? productService.listProductActiveOrderLocks(soldIds) : new Map(),
@@ -27,7 +27,7 @@ export default function AdminProductsPage() {
   );
   const members = useAsync(() => authService.listUsers(), []);
   const sellerNames = useMemo(() => new Map((members.data ?? []).map((m) => [m.id, m.fullName])), [members.data]);
-  const rows = useMemo(() => filter ? data.filter((p) => p.status === filter) : data, [data, filter]);
+  const rows = useMemo(() => filter ? (data ?? []).filter((p) => p.status === filter) : (data ?? []), [data, filter]);
   const columns = [
     { key: 'title', header: 'Piece', sortable: true, render: (p) => <><span className="font-medium">{p.title}</span><span className="block text-meta">{p.brand || 'No brand'} · {p.size || 'No size'}</span></> },
     { key: 'sellerId', header: 'Seller', render: (p) => sellerNames.get(p.sellerId) ?? 'Unknown seller' },
@@ -59,3 +59,4 @@ export default function AdminProductsPage() {
     </section>
   );
 }
+
