@@ -19,6 +19,12 @@ const FILTERS = [
 export default function AdminProductsPage() {
   const [filter, setFilter] = useState(null);
   const { data = [], loading, error, reload } = useAsync(() => productService.listAllProducts(), []);
+  const soldIds = useMemo(() => data.filter((product) => product.status === PRODUCT_STATUS.SOLD).map((product) => product.id), [data]);
+  const soldIdKey = soldIds.join('|');
+  const activeOrderLocks = useAsync(
+    () => soldIds.length ? productService.listProductActiveOrderLocks(soldIds) : new Map(),
+    [soldIdKey]
+  );
   const members = useAsync(() => authService.listUsers(), []);
   const sellerNames = useMemo(() => new Map((members.data ?? []).map((m) => [m.id, m.fullName])), [members.data]);
   const rows = useMemo(() => filter ? data.filter((p) => p.status === filter) : data, [data, filter]);
@@ -30,7 +36,12 @@ export default function AdminProductsPage() {
     { key: 'action', header: 'Action', render: (p) => (
       <div className="flex flex-wrap items-center justify-end gap-2">
         {(p.status === PRODUCT_STATUS.APPROVED || p.status === PRODUCT_STATUS.SOLD) && <Link to={ROUTES.product(p.id)} className="link-underline text-sm">View</Link>}
-        <AdminProductStatusAction product={p} onChanged={reload} />
+        <AdminProductStatusAction
+          product={p}
+          activeOrderLock={activeOrderLocks.data?.get(p.id)}
+          lockLoading={p.status === PRODUCT_STATUS.SOLD && activeOrderLocks.loading}
+          onChanged={reload}
+        />
       </div>
     ) },
   ];

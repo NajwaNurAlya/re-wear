@@ -78,6 +78,11 @@ export default function ProductDetailPage() {
   const toast = useToast();
 
   const product = data?.product;
+  const needsOrderLock = role === ROLES.ADMIN && product?.status === PRODUCT_STATUS.SOLD;
+  const activeOrderLocks = useAsync(
+    () => needsOrderLock ? productService.listProductActiveOrderLocks([product.id]) : new Map(),
+    [needsOrderLock, product?.id]
+  );
   useDocumentTitle(loading ? 'Loading piece' : product ? product.title : 'Piece not found');
 
   if (loading) {
@@ -192,7 +197,13 @@ export default function ProductDetailPage() {
               <div className="mt-8 border-y border-beige py-5">
                 <p className="text-meta uppercase tracking-[0.16em]">Admin status</p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <AdminProductStatusAction product={product} onChanged={reload} size="md" />
+                  <AdminProductStatusAction
+                    product={product}
+                    activeOrderLock={activeOrderLocks.data?.get(product.id)}
+                    lockLoading={needsOrderLock && activeOrderLocks.loading}
+                    onChanged={reload}
+                    size="md"
+                  />
                 </div>
               </div>
             )}

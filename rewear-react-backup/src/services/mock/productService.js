@@ -118,6 +118,23 @@ export async function listAllProducts() {
   return allProducts().map(copy);
 }
 
+export async function listProductActiveOrderLocks(ids = []) {
+  const productIds = new Set(ids);
+  const locks = new Map();
+  for (const order of readOrders()) {
+    if (order.status === 'cancelled') continue;
+    for (const item of order.items ?? []) {
+      if (!productIds.has(item.id) || locks.has(item.id)) continue;
+      locks.set(item.id, {
+        orderId: order.id,
+        orderNumber: order.orderNumber ?? order.id,
+        status: order.status,
+      });
+    }
+  }
+  return locks;
+}
+
 async function imageData(photo) {
   if (!photo?.file) return photo?.url ?? photo;
   return new Promise((resolve, reject) => {

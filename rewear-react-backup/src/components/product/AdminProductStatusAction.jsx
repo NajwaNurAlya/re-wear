@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Button from '@/components/ui/Button';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { PRODUCT_STATUS } from '@/constants';
+import { ROUTES } from '@/constants/routes';
 import { useToast } from '@/hooks/useToast';
 import { productService } from '@/services';
 
@@ -31,13 +33,25 @@ function actionFor(product) {
   return null;
 }
 
-export default function AdminProductStatusAction({ product, onChanged, size = 'sm', fullWidth = false }) {
+export default function AdminProductStatusAction({ product, activeOrderLock, lockLoading = false, onChanged, size = 'sm', fullWidth = false }) {
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
   const action = actionFor(product);
 
   if (!action) return null;
+  if (product.status === PRODUCT_STATUS.SOLD && lockLoading) {
+    return <p className="text-xs text-brown">Checking order lock...</p>;
+  }
+  if (product.status === PRODUCT_STATUS.SOLD && activeOrderLock) {
+    return (
+      <div className="max-w-56 text-xs leading-relaxed text-brown">
+        <p className="font-medium text-dark-brown">Locked by active order</p>
+        <p>Complete or cancel the order before restoring this product.</p>
+        <Link to={ROUTES.admin.orders} className="link-underline">Open order desk</Link>
+      </div>
+    );
+  }
 
   const confirm = async () => {
     setSaving(true);

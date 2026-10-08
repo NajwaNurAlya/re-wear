@@ -173,6 +173,30 @@ export async function listAllProducts() {
   }
 }
 
+export async function listProductActiveOrderLocks(ids = []) {
+  const productIds = [...new Set(ids)].filter(Boolean);
+  if (!productIds.length) return new Map();
+  try {
+    const client = requireClient();
+    const { data, error } = await client
+      .from('order_items')
+      .select('product_id, order_id, orders!inner(id, order_number, status)')
+      .in('product_id', productIds)
+      .is('released_at', null);
+    if (error) throw error;
+    return new Map((data ?? []).map((row) => [
+      row.product_id,
+      {
+        orderId: row.order_id,
+        orderNumber: row.orders?.order_number ?? row.order_id,
+        status: row.orders?.status,
+      },
+    ]));
+  } catch (error) {
+    throw mapError(error);
+  }
+}
+
 // A newly picked photo ({ file, url: blob preview }) is uploaded to Storage under the seller's own folder and replaced by its
 // public URL. A photo that is already a URL is kept as it is. Nothing is ever stored in the database as base64.
 async function uploadPhoto(client, file, sellerId) {
