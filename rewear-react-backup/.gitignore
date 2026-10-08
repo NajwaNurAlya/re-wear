@@ -8,3 +8,5 @@ dist
 # Local backups / archives
 *_backup*/
 *.zip
+
+rewear-local-data.json
