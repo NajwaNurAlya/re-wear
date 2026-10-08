@@ -44,13 +44,7 @@ export default function AdminProductStatusAction({ product, activeOrderLock, loc
     return <p className="text-xs text-brown">Checking order lock...</p>;
   }
   if (product.status === PRODUCT_STATUS.SOLD && activeOrderLock) {
-    return (
-      <div className="max-w-56 text-xs leading-relaxed text-brown">
-        <p className="font-medium text-dark-brown">Locked by active order</p>
-        <p>Complete or cancel the order before restoring this product.</p>
-        <Link to={ROUTES.admin.orders} className="link-underline">Open order desk</Link>
-      </div>
-    );
+    return null;
   }
 
   const confirm = async () => {
@@ -84,3 +78,4 @@ export default function AdminProductStatusAction({ product, activeOrderLock, loc
     </>
   );
 }
+
