@@ -72,7 +72,7 @@ function Facts({ rows }) {
 export default function ProductDetailPage() {
   const { id } = useParams();
   const { data, loading, error, reload } = useAsync(() => loadProduct(id), [id]);
-  const { user, role } = useAuth();
+  const { isAuthenticated, user, role } = useAuth();
   const cart = useCart();
   const wishlist = useWishlist();
   const toast = useToast();
@@ -120,6 +120,7 @@ export default function ProductDetailPage() {
   const { category, related } = data;
   const sold = product.status === PRODUCT_STATUS.SOLD;
   const isAdmin = role === ROLES.ADMIN;
+  const canUseWishlist = !isAuthenticated || role === ROLES.BUYER;
   const isOwnPiece = Boolean(user) && product.sellerId === user.id;
   const canBuy = !sold && !isAdmin && !isOwnPiece;
   const inCart = cart.has(product.id);
@@ -214,7 +215,7 @@ export default function ProductDetailPage() {
                     ) : (
                       <Button fullWidth size="lg" onClick={handleAddToCart} disabled={!canBuy}>Add to cart</Button>
                     )}
-                    {!isAdmin && (
+                    {canUseWishlist && (
                       <Button
                         variant="secondary"
                         size="lg"
@@ -236,7 +237,7 @@ export default function ProductDetailPage() {
                   {isAdmin && <p className="mt-3 text-sm text-brown">Curator accounts browse in view-only mode.</p>}
                 </>
               )}
-              {sold && !isAdmin && (
+              {sold && canUseWishlist && (
                 <Button
                   variant="secondary"
                   fullWidth
@@ -306,7 +307,7 @@ export default function ProductDetailPage() {
             products={related}
             columns="quad"
             wishlistIds={wishlist.ids}
-            onToggleWishlist={isAdmin ? undefined : handleToggleWishlist}
+            onToggleWishlist={canUseWishlist ? handleToggleWishlist : undefined}
           />
         </section>
       )}

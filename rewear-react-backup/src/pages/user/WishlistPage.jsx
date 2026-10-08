@@ -1,11 +1,15 @@
 import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';
 import ProductGrid from '@/components/product/ProductGrid';
+import { ROLES } from '@/constants';
 import { ROUTES } from '@/constants/routes';
+import { useAuth } from '@/hooks/useAuth';
 import { useWishlist } from '@/hooks/useWishlist';
 
 export default function WishlistPage() {
+  const { role } = useAuth();
   const wishlist = useWishlist();
+  const canUseWishlist = role === ROLES.BUYER;
   const products = wishlist.items.map(({ image, ...item }) => ({
     ...item,
     images: image ? [image] : [],
@@ -26,7 +30,7 @@ export default function WishlistPage() {
         <ProductGrid
           products={products}
           wishlistIds={wishlist.ids}
-          onToggleWishlist={(product) => wishlist.remove(product.id)}
+          onToggleWishlist={canUseWishlist ? (product) => wishlist.remove(product.id) : undefined}
           empty={(
             <EmptyState
               title="No saved pieces yet."

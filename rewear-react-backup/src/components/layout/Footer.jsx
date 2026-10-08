@@ -21,17 +21,38 @@ function LinkGroup({ title, links }) {
 
 export default function Footer() {
   const { isAuthenticated, role } = useAuth();
-  const canShop = role === ROLES.BUYER || role === ROLES.SELLER;
+  const isBuyer = role === ROLES.BUYER;
+  const isSeller = role === ROLES.SELLER;
+  const isAdmin = role === ROLES.ADMIN;
 
   const shop = [
     { label: 'Explore', to: ROUTES.explore },
     { label: 'Editorial', to: ROUTES.editorial },
   ];
   const account = isAuthenticated
-    ? [
-        { label: 'Profile', to: ROUTES.profile },
-        ...(canShop ? [{ label: 'My orders', to: ROUTES.orders }, { label: 'Wishlist', to: ROUTES.wishlist }] : []),
-      ]
+    ? isBuyer
+      ? [
+          { label: 'My orders', to: ROUTES.orders },
+          { label: 'Wishlist', to: ROUTES.wishlist },
+          { label: 'Profile', to: ROUTES.profile },
+        ]
+      : isSeller
+        ? [
+            { label: 'Seller Dashboard', to: ROUTES.seller.root },
+            { label: 'Products', to: ROUTES.seller.products },
+            { label: 'Sales', to: ROUTES.seller.orders },
+            { label: 'Profile', to: ROUTES.profile },
+          ]
+        : isAdmin
+          ? [
+              { label: 'Admin Dashboard', to: ROUTES.admin.root },
+              { label: 'Products', to: ROUTES.admin.products },
+              { label: 'Orders', to: ROUTES.admin.orders },
+              { label: 'Editorial', to: ROUTES.admin.editorial },
+              { label: 'Users', to: ROUTES.admin.users },
+              { label: 'Profile', to: ROUTES.profile },
+            ]
+          : [{ label: 'Profile', to: ROUTES.profile }]
     : [
         { label: 'Log in', to: ROUTES.login },
         { label: 'Register', to: ROUTES.register },

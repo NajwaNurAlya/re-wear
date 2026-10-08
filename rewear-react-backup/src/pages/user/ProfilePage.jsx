@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom';
 import Button from '@/components/ui/Button';
+import { ROLES } from '@/constants';
 import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function ProfilePage() {
   const { user, role } = useAuth();
   const links = [
-    ...(role !== 'admin' ? [{ title: 'Order history', copy: 'Follow the progress of your orders.', to: ROUTES.orders, action: 'View orders' }] : []),
-    ...(role !== 'admin' ? [{ title: 'Wishlist', copy: 'Keep a short list of pieces you love.', to: ROUTES.wishlist, action: 'View wishlist' }] : []),
-    ...(role === 'seller' ? [{ title: 'Seller studio', copy: 'Manage your listings and incoming orders.', to: ROUTES.seller.root, action: 'Open studio' }] : []),
-    ...(role === 'admin' ? [{ title: 'Curator desk', copy: 'Review pieces and manage the storefront.', to: ROUTES.admin.root, action: 'Open desk' }] : []),
+    ...(role === ROLES.BUYER ? [{ title: 'Order history', copy: 'Follow the progress of your orders.', to: ROUTES.orders, action: 'View orders' }] : []),
+    ...(role === ROLES.BUYER ? [{ title: 'Wishlist', copy: 'Keep a short list of pieces you love.', to: ROUTES.wishlist, action: 'View wishlist' }] : []),
+    ...(role === ROLES.SELLER ? [{ title: 'Seller studio', copy: 'Manage your listings and incoming orders.', to: ROUTES.seller.root, action: 'Open studio' }] : []),
+    ...(role === ROLES.ADMIN ? [{ title: 'Curator desk', copy: 'Review pieces and manage the storefront.', to: ROUTES.admin.root, action: 'Open desk' }] : []),
   ];
 
   return (

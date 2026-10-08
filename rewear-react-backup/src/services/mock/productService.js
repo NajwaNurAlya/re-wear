@@ -20,6 +20,10 @@ function readOverrides() {
   catch { return {}; }
 }
 
+function writeOverrides(overrides) {
+  localStorage.setItem(PRODUCT_OVERRIDES_KEY, JSON.stringify(overrides));
+}
+
 function readOrders() {
   try {
     const value = JSON.parse(localStorage.getItem(ORDERS_KEY));
@@ -160,6 +164,11 @@ export async function saveSellerProduct(values, sellerId, intent, existingId) {
   const next = existingId ? custom.map((item) => item.id === existingId ? product : item) : [...custom, product];
   if (existingId && !custom.some((item) => item.id === existingId)) next.push(product);
   localStorage.setItem(SELLER_PRODUCTS_KEY, JSON.stringify(next));
+  const overrides = readOverrides();
+  if (overrides[product.id]) {
+    delete overrides[product.id];
+    writeOverrides(overrides);
+  }
   return copy(product);
 }
 
@@ -168,7 +177,7 @@ export async function setProductModeration(id, status, rejectionReason = '') {
   if (!product) return null;
   const overrides = readOverrides();
   overrides[id] = { ...overrides[id], status, rejectionReason: rejectionReason || undefined };
-  localStorage.setItem(PRODUCT_OVERRIDES_KEY, JSON.stringify(overrides));
+  writeOverrides(overrides);
   return { ...copy(product), status, rejectionReason: rejectionReason || undefined };
 }
 
@@ -198,6 +207,6 @@ export async function setProductAvailability(id, status) {
   }
   const overrides = readOverrides();
   overrides[id] = { ...overrides[id], status, rejectionReason: undefined };
-  localStorage.setItem(PRODUCT_OVERRIDES_KEY, JSON.stringify(overrides));
+  writeOverrides(overrides);
   return { ...copy(product), status, rejectionReason: undefined };
 }

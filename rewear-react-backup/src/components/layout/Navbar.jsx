@@ -115,19 +115,31 @@ export default function Navbar({ cartCount = 0, wishlistCount = 0 }) {
     setSearchOpen(false);
   }, [pathname]);
 
-  const canShop = !isAuthenticated || role === ROLES.BUYER || role === ROLES.SELLER; // admins (and signed-in people without a profile role) have no cart or wishlist
-  const dashboard =
-    role === ROLES.SELLER
-      ? { label: 'Seller studio', to: ROUTES.seller.root }
-      : role === ROLES.ADMIN
-        ? { label: 'Curator desk', to: ROUTES.admin.root }
-        : null;
-
-  const accountItems = [
-    { label: 'Profile', to: ROUTES.profile },
-    ...(canShop ? [{ label: 'My orders', to: ROUTES.orders }] : []),
-    ...(dashboard ? [dashboard] : []),
-  ];
+  const isBuyer = role === ROLES.BUYER;
+  const isSeller = role === ROLES.SELLER;
+  const isAdmin = role === ROLES.ADMIN;
+  const accountItems = isBuyer
+    ? [
+        { label: 'My orders', to: ROUTES.orders },
+        { label: 'Profile', to: ROUTES.profile },
+      ]
+    : isSeller
+      ? [
+          { label: 'Seller Dashboard', to: ROUTES.seller.root },
+          { label: 'Products', to: ROUTES.seller.products },
+          { label: 'Sales', to: ROUTES.seller.orders },
+          { label: 'Profile', to: ROUTES.profile },
+        ]
+      : isAdmin
+        ? [
+            { label: 'Admin Dashboard', to: ROUTES.admin.root },
+            { label: 'Products', to: ROUTES.admin.products },
+            { label: 'Orders', to: ROUTES.admin.orders },
+            { label: 'Editorial', to: ROUTES.admin.editorial },
+            { label: 'Users', to: ROUTES.admin.users },
+            { label: 'Profile', to: ROUTES.profile },
+          ]
+        : [{ label: 'Profile', to: ROUTES.profile }];
   // Leave the current page first (it may be a protected one), then clear the session.
   const handleSignOut = async () => {
     setMenuOpen(false);
@@ -169,7 +181,7 @@ export default function Navbar({ cartCount = 0, wishlistCount = 0 }) {
               {searchOpen ? <CloseIcon /> : <SearchIcon />}
             </button>
 
-            {canShop && (
+            {isBuyer && (
               <>
                 <Link to={ROUTES.wishlist} aria-label={`Wishlist${wishlistCount ? `, ${wishlistCount} saved` : ''}`} className={iconButton}>
                   <HeartIcon />
