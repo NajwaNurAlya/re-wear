@@ -2,6 +2,8 @@ import { Link, Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/layout/Sidebar';
 import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/useToast';
+import { authErrorMessage } from '@/lib/auth';
 
 const AREAS = {
   seller: {
@@ -19,6 +21,7 @@ const AREAS = {
       { label: 'Overview', to: ROUTES.admin.root, end: true },
       { label: 'Curation queue', to: ROUTES.admin.curation },
       { label: 'Products', to: ROUTES.admin.products },
+      { label: 'Editorial', to: ROUTES.admin.editorial },
       { label: 'Users', to: ROUTES.admin.users },
       { label: 'Categories', to: ROUTES.admin.categories },
       { label: 'Orders', to: ROUTES.admin.orders },
@@ -28,12 +31,17 @@ const AREAS = {
 
 export default function DashboardLayout({ area }) {
   const { title, items } = AREAS[area];
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
+  const toast = useToast();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
     navigate(ROUTES.home, { replace: true });
-    await signOut();
+    try {
+      await logout();
+    } catch (err) {
+      toast.error(authErrorMessage(err, 'We could not log you out. Please try again.'));
+    }
   };
 
   return (

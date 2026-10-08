@@ -21,7 +21,7 @@ function LinkGroup({ title, links }) {
 
 export default function Footer() {
   const { isAuthenticated, role } = useAuth();
-  const canShop = role !== ROLES.ADMIN;
+  const canShop = role === ROLES.BUYER || role === ROLES.SELLER;
 
   const shop = [
     { label: 'Explore', to: ROUTES.explore },

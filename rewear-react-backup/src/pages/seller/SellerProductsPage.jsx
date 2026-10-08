@@ -37,7 +37,7 @@ export default function SellerProductsPage() {
           <DataTable caption="Seller listings" columns={columns} rows={rows} loading={loading} empty={<EmptyState compact title={filter === 'All' ? 'No listings yet' : `No ${filter.toLowerCase()} listings`} description="Your saved listings will appear here." action={filter === 'All' ? <Button to={ROUTES.seller.newProduct}>List a piece</Button> : undefined} />} />
         )}
       </div>
-      <p className="mt-5 text-xs text-brown">Listing drafts, photos and review status are stored in this browser in demo mode.</p>
+      <p className="mt-5 text-xs text-brown">Drafts are private to you. Submitted pieces appear in Explore once a curator approves them.</p>
     </section>
   );
 }

@@ -26,7 +26,7 @@ export default function ProfilePage() {
             <div className="grid gap-1 py-4 sm:grid-cols-[10rem_1fr]"><dt className="text-sm text-brown">Email</dt><dd className="font-medium break-all">{user?.email ?? '—'}</dd></div>
             <div className="grid gap-1 py-4 sm:grid-cols-[10rem_1fr]"><dt className="text-sm text-brown">Account type</dt><dd className="font-medium capitalize">{role ?? 'member'}</dd></div>
           </dl>
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-brown">Profile editing is not available in this demo yet. Your account details are shown here for reference.</p>
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-brown">Your account details are shown here for reference. Editing your profile is not available yet.</p>
         </section>
 
         <aside className="h-fit border border-beige bg-white/35 p-5 md:p-6" aria-labelledby="quick-links-title">

@@ -5,15 +5,6 @@ import { ROUTES } from '@/constants/routes';
 import { useAsync } from '@/hooks/useAsync';
 import { categoryService, productService } from '@/services';
 
-const DESCRIPTIONS = {
-  outerwear: 'Jackets, coats and layers made for repeat wear.',
-  tops: 'Shirts, blouses and everyday pieces for the upper half.',
-  bottoms: 'Trousers, skirts and the pieces that complete a silhouette.',
-  dresses: 'One-piece finds, from easy day dresses to occasionwear.',
-  knitwear: 'Cardigans and jumpers with texture, warmth and history.',
-  accessories: 'Bags and finishing pieces with another story to tell.',
-};
-
 export default function AdminCategoriesPage() {
   const { data, loading, error } = useAsync(async () => Promise.all([categoryService.listCategories(), productService.listAllProducts()]), []);
   const categories = data?.[0] ?? [];
@@ -33,15 +24,15 @@ export default function AdminCategoriesPage() {
                 <li key={category.id} className="flex min-h-52 flex-col bg-cream p-5 md:p-6">
                   <p className="text-meta uppercase tracking-[0.14em]">{String(count).padStart(2, '0')} {count === 1 ? 'piece' : 'pieces'}</p>
                   <h2 className="font-serif text-2xl mt-3">{category.name}</h2>
-                  <p className="mt-2 flex-1 text-sm leading-relaxed text-brown">{DESCRIPTIONS[category.slug] ?? 'A place for considered preloved finds.'}</p>
-                  <Link to={ROUTES.exploreWith({ category: category.id })} className="link-underline mt-4 self-start text-sm">Browse this category</Link>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-brown">{category.description || 'A place for considered preloved finds.'}</p>
+                  <Link to={ROUTES.exploreWith({ category: category.slug ?? category.id })} className="link-underline mt-4 self-start text-sm">Browse this category</Link>
                 </li>
               );
             })}
           </ul>
         )}
       </div>
-      <p className="mt-5 text-xs leading-relaxed text-brown">Categories are part of the demo catalog’s fixed structure. Add or rename categories in the product data before connecting a live database.</p>
+      <p className="mt-5 text-xs leading-relaxed text-brown">Categories are a fixed taxonomy. Counts include every piece in the category, whatever its status. Changes are made in the database.</p>
     </section>
   );
 }

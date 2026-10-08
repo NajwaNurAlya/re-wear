@@ -1,17 +1,19 @@
 import { categories } from './seed';
-import { isPublic } from './productService';
-import { listAllProducts } from './productService';
+import { isPublic, listAllProducts } from './productService';
 
-/** All categories with the number of public pieces in each. */
+/** All categories in curated order, each with the number of public pieces in it. */
 export async function listCategories() {
   const products = await listAllProducts();
-  return categories.map((c) => ({
-    ...c,
-    productCount: products.filter((p) => p.categoryId === c.id && isPublic(p)).length,
-  }));
+  return [...categories]
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((c) => ({
+      ...c,
+      productCount: products.filter((p) => p.categoryId === c.id && isPublic(p)).length,
+    }));
 }
 
-/** One category by id, or null. */
-export async function getCategory(id) {
-  return categories.find((c) => c.id === id) ?? null;
+/** One category by id or slug, or null. Same contract as the Supabase adapter. */
+export async function getCategory(key) {
+  if (!key) return null;
+  return categories.find((c) => c.id === key || c.slug === key) ?? null;
 }

@@ -3,26 +3,32 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
-import { AlertIcon, CloseIcon, UploadIcon } from '@/components/ui/icons';
+import { AlertIcon, ChevronIcon, CloseIcon, UploadIcon } from '@/components/ui/icons';
 import ProductBadge from '@/components/product/ProductBadge';
 import { CONDITIONS, ERAS, PRODUCT_STATUS, SIZES, STYLES } from '@/constants';
 import { cx } from '@/lib/cx';
 
 const MAX_PHOTOS = 6;
 const MAX_PHOTO_MB = 5;
+const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MEASUREMENT_FIELDS = ['Chest', 'Shoulder', 'Sleeve', 'Waist', 'Hip', 'Length', 'Inseam', 'Rise'];
 
 const EMPTY = {
   title: '', description: '', categoryId: '', brand: '', size: '',
-  condition: '', era: '', style: '', price: '', images: [],
+  condition: '', era: '', styles: [], material: '', measurements: {},
+  featured: false, price: '', images: [],
 };
 
 const toPhoto = (i) => (typeof i === 'string' ? { id: i, url: i } : i);
 
 function fromInitial(initial = {}) {
+  initial = initial ?? {};
   return {
     ...EMPTY,
     ...initial,
     price: initial.price != null ? String(initial.price) : '',
+    styles: Array.isArray(initial.styles) ? [...initial.styles] : (initial.style ? [initial.style] : []),
+    measurements: { ...(initial.measurements ?? {}) },
     images: (initial.images ?? []).map(toPhoto),
   };
 }
@@ -89,6 +95,8 @@ export default function ProductForm({
   const [errors, setErrors] = useState({});
   const [photoNotes, setPhotoNotes] = useState([]);
   const fileInput = useRef(null);
+  const replaceInput = useRef(null);
+  const replaceId = useRef(null);
   const blobUrls = useRef(new Set());
 
   // Free the preview URLs created for newly picked files.
@@ -103,22 +111,30 @@ export default function ProductForm({
     if (errors[name]) setErrors((er) => ({ ...er, [name]: undefined }));
   };
 
+  const checkFile = (file) => {
+    if (!PHOTO_TYPES.includes(file.type)) return `${file.name} must be JPG, PNG or WebP.`;
+    if (file.size > MAX_PHOTO_MB * 1024 * 1024) return `${file.name} is larger than ${MAX_PHOTO_MB} MB.`;
+    return '';
+  };
+
+  const makePhoto = (file) => {
+    const url = URL.createObjectURL(file);
+    blobUrls.current.add(url);
+    return { id: `new-${crypto.randomUUID()}`, url, file };
+  };
+
   const addFiles = (fileList) => {
     const notes = [];
     const accepted = [];
     for (const f of Array.from(fileList)) {
-      if (!f.type.startsWith('image/')) notes.push(`${f.name} is not an image.`);
-      else if (f.size > MAX_PHOTO_MB * 1024 * 1024) notes.push(`${f.name} is larger than ${MAX_PHOTO_MB} MB.`);
+      const problem = checkFile(f);
+      if (problem) notes.push(problem);
       else accepted.push(f);
     }
     const room = MAX_PHOTOS - values.images.length;
     if (accepted.length > room) notes.push(`You can add up to ${MAX_PHOTOS} photos. Extra files were skipped.`);
 
-    const added = accepted.slice(0, Math.max(room, 0)).map((file) => {
-      const url = URL.createObjectURL(file);
-      blobUrls.current.add(url);
-      return { id: `new-${crypto.randomUUID()}`, url, file };
-    });
+    const added = accepted.slice(0, Math.max(room, 0)).map(makePhoto);
     setPhotoNotes(notes);
     if (added.length) {
       setValues((v) => ({ ...v, images: [...v.images, ...added] }));
@@ -134,11 +150,58 @@ export default function ProductForm({
     });
   };
 
+  const startReplace = (id) => {
+    replaceId.current = id;
+    replaceInput.current?.click();
+  };
+
+  const replacePhoto = (fileList) => {
+    const [file] = Array.from(fileList ?? []);
+    if (!file) return;
+    const problem = checkFile(file);
+    if (problem) {
+      setPhotoNotes([problem]);
+      return;
+    }
+    const nextPhoto = makePhoto(file);
+    const targetId = replaceId.current;
+    setValues((v) => {
+      const current = v.images.find((p) => p.id === targetId);
+      if (current && blobUrls.current.delete(current.url)) URL.revokeObjectURL(current.url);
+      return { ...v, images: v.images.map((p) => (p.id === targetId ? nextPhoto : p)) };
+    });
+    setErrors((er) => ({ ...er, images: undefined }));
+    setPhotoNotes([]);
+    replaceId.current = null;
+  };
+
   const makeCover = (id) =>
     setValues((v) => {
       const pick = v.images.find((p) => p.id === id);
       return { ...v, images: [pick, ...v.images.filter((p) => p.id !== id)] };
     });
+
+  const movePhoto = (id, direction) =>
+    setValues((v) => {
+      const index = v.images.findIndex((p) => p.id === id);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= v.images.length) return v;
+      const images = [...v.images];
+      [images[index], images[nextIndex]] = [images[nextIndex], images[index]];
+      return { ...v, images };
+    });
+
+  const toggleStyle = (style) => {
+    setValues((v) => ({
+      ...v,
+      styles: v.styles.includes(style) ? v.styles.filter((s) => s !== style) : [...v.styles, style],
+    }));
+  };
+
+  const setMeasurement = (name) => (e) => {
+    const value = e.target.value;
+    setValues((v) => ({ ...v, measurements: { ...v.measurements, [name]: value } }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -152,12 +215,32 @@ export default function ProductForm({
       document.getElementById(fid(first))?.focus();
       return;
     }
-    onSubmit?.({ ...values, title: values.title.trim(), description: values.description.trim(), price: Number(values.price) || 0 }, intent);
+    const measurements = Object.fromEntries(
+      Object.entries(values.measurements ?? {})
+        .map(([key, value]) => [key, String(value ?? '').trim()])
+        .filter(([, value]) => value !== '')
+        .map(([key, value]) => [key, Number(value) || value])
+    );
+    onSubmit?.({
+      ...values,
+      title: values.title.trim(),
+      description: values.description.trim(),
+      brand: values.brand.trim(),
+      material: values.material.trim(),
+      measurements,
+      price: Number(values.price) || 0,
+    }, intent);
   };
 
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
   const hasErrors = Object.values(errors).some(Boolean);
   const locked = disabled || submitting;
+  const canSaveDraft = !status || [PRODUCT_STATUS.DRAFT, PRODUCT_STATUS.REJECTED].includes(status);
+  const submitLabel = status === PRODUCT_STATUS.APPROVED
+    ? 'Save for review'
+    : status === PRODUCT_STATUS.PENDING
+      ? 'Update pending listing'
+      : 'Submit for curation';
 
   return (
     <form noValidate onSubmit={handleSubmit} className={cx('grid gap-10', className)}>
@@ -194,6 +277,15 @@ export default function ProductForm({
                       Make cover
                     </button>
                   )}
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <button type="button" onClick={() => startReplace(photo.id)} className="link-underline">Replace</button>
+                    <button type="button" onClick={() => movePhoto(photo.id, -1)} disabled={i === 0} aria-label={`Move photo ${i + 1} earlier`} className="disabled:opacity-40">
+                      <ChevronIcon direction="left" size={14} />
+                    </button>
+                    <button type="button" onClick={() => movePhoto(photo.id, 1)} disabled={i === values.images.length - 1} aria-label={`Move photo ${i + 1} later`} className="disabled:opacity-40">
+                      <ChevronIcon direction="right" size={14} />
+                    </button>
+                  </div>
                 </li>
               ))}
 
@@ -219,13 +311,25 @@ export default function ProductForm({
             <input
               ref={fileInput}
               type="file"
-              accept="image/*"
+              accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
               multiple
               tabIndex={-1}
               aria-hidden="true"
               className="sr-only"
               onChange={(e) => {
                 addFiles(e.target.files);
+                e.target.value = '';
+              }}
+            />
+            <input
+              ref={replaceInput}
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+              tabIndex={-1}
+              aria-hidden="true"
+              className="sr-only"
+              onChange={(e) => {
+                replacePhoto(e.target.files);
                 e.target.value = '';
               }}
             />
@@ -247,7 +351,46 @@ export default function ProductForm({
             <Select id={fid('size')} label="Size" required placeholder="Choose a size" options={SIZES} value={values.size} onChange={set('size')} error={errors.size} />
             <Select id={fid('condition')} label="Condition" required placeholder="Choose a condition" options={CONDITIONS} value={values.condition} onChange={set('condition')} error={errors.condition} />
             <Select label="Era" optional placeholder="Not specified" options={ERAS} value={values.era} onChange={set('era')} />
-            <Select label="Style" optional placeholder="Not specified" options={STYLES} value={values.style} onChange={set('style')} />
+            <Input label="Material" optional value={values.material} onChange={set('material')} maxLength={120} placeholder="e.g. Cotton denim" />
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-medium text-dark-brown">Styles <span className="font-normal text-brown">(optional)</span></p>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Styles">
+              {STYLES.map((style) => (
+                <button
+                  key={style}
+                  type="button"
+                  aria-pressed={values.styles.includes(style)}
+                  onClick={() => toggleStyle(style)}
+                  className={cx(
+                    'border px-3 py-2 text-sm transition-colors',
+                    values.styles.includes(style)
+                      ? 'border-dark-brown bg-dark-brown text-cream'
+                      : 'border-brown/60 text-dark-brown hover:bg-beige/60'
+                  )}
+                >
+                  {style}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-medium text-dark-brown">Measurements <span className="font-normal text-brown">(cm, optional)</span></p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {MEASUREMENT_FIELDS.map((name) => (
+                <Input
+                  key={name}
+                  label={name}
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  inputMode="decimal"
+                  suffix="cm"
+                  value={values.measurements?.[name] ?? ''}
+                  onChange={setMeasurement(name)}
+                />
+              ))}
+            </div>
           </div>
         </Section>
 
@@ -262,8 +405,8 @@ export default function ProductForm({
         )}
         <div className="flex flex-wrap justify-end gap-3">
           {onCancel && <Button variant="ghost" onClick={onCancel} disabled={submitting}>Cancel</Button>}
-          <Button type="submit" value="draft" variant="secondary" disabled={locked}>Save draft</Button>
-          <Button type="submit" value="submit" loading={submitting} disabled={disabled}>Submit for curation</Button>
+          {canSaveDraft && <Button type="submit" value="draft" variant="secondary" disabled={locked}>Save draft</Button>}
+          <Button type="submit" value="submit" loading={submitting} disabled={disabled}>{submitLabel}</Button>
         </div>
       </div>
     </form>

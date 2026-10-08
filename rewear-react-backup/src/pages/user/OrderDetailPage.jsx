@@ -15,7 +15,7 @@ export default function OrderDetailPage() {
   if (loading) return <section className="container-page py-16 text-center text-brown">Loading order…</section>;
   if (error || !order) return (
     <section className="container-page py-10 md:py-14">
-      <EmptyState as="h1" title="Order not found" description="This order may belong to a different browser session." action={<Button to={ROUTES.orders}>Back to order history</Button>} />
+      <EmptyState as="h1" title="Order not found" description="This order may belong to a different account, or it is no longer available." action={<Button to={ROUTES.orders}>Back to order history</Button>} />
     </section>
   );
 
@@ -25,7 +25,7 @@ export default function OrderDetailPage() {
       <div className="mt-6 flex flex-wrap items-end justify-between gap-4 border-b border-beige pb-6">
         <div>
           <p className="text-meta uppercase tracking-[0.16em]">Placed {formatDate(order.createdAt)}</p>
-          <h1 id="order-title" className="display-md mt-2">Order {order.id}</h1>
+          <h1 id="order-title" className="display-md mt-2">Order {order.orderNumber ?? order.id}</h1>
         </div>
         <StatusBadge type="order" status={order.status} />
       </div>
@@ -59,7 +59,7 @@ export default function OrderDetailPage() {
         <aside className="h-fit border border-beige p-5 md:p-6" aria-labelledby="progress-title">
           <h2 id="progress-title" className="title">Order progress</h2>
           <OrderTimeline status={order.status} events={order.events} className="mt-5" />
-          <p className="mt-5 border-t border-beige pt-4 text-xs leading-relaxed text-brown">This demo order is stored locally. It does not initiate payment, packing, or delivery.</p>
+          <p className="mt-5 border-t border-beige pt-4 text-xs leading-relaxed text-brown">Payment, packing and delivery are arranged by the RE:WEAR team after your order is recorded.</p>
         </aside>
       </div>
     </section>

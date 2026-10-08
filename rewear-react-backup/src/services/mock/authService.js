@@ -1,5 +1,5 @@
 // Mock authentication (Step 8): accounts and the session live in localStorage.
-// The Supabase adapter (Step 12) exposes the same functions, so AuthContext does not change.
+// The Supabase adapter (services/supabase/authService.js) exposes the same functions, so AuthContext does not change.
 //
 //   signIn({ email, password })                       -> user
 //   signUp({ fullName, email, password, role })       -> user (signed in)
@@ -12,19 +12,14 @@
 // NOTE: this is a demo. Hashing here only avoids storing plain text; it is NOT real security.
 import { REGISTRABLE_ROLES } from '@/constants';
 import { normalizeEmail, validateRegister } from '@/lib/validators';
+import { AuthError } from '../authError';
 import { demoUsers } from './seed';
 
 const USERS_KEY = 'rewear.users'; // accounts registered in this browser (demo accounts are in the seed)
 const SESSION_KEY = 'rewear.session'; // { userId }
 
-export class AuthError extends Error {
-  constructor(code, message, fields = {}) {
-    super(message);
-    this.name = 'AuthError';
-    this.code = code; // 'invalid_credentials' | 'email_taken' | 'role_not_allowed' | 'validation'
-    this.fields = fields;
-  }
-}
+// AuthError lives in ../authError so the mock and Supabase adapters throw the same type.
+export { AuthError };
 
 /* ------------------------------------------------------------------ storage */
 // localStorage with an in-memory fallback (private mode, blocked storage), so auth still works for the session.

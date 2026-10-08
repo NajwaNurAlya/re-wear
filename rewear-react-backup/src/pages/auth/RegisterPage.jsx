@@ -8,7 +8,7 @@ import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useToast } from '@/hooks/useToast';
-import { postAuthRoute } from '@/lib/auth';
+import { authErrorMessage, postAuthRoute } from '@/lib/auth';
 import { PASSWORD_MIN_LENGTH, validateRegister } from '@/lib/validators';
 
 // Admin is deliberately absent: it can never be chosen at registration.
@@ -21,7 +21,7 @@ const EMPTY = { fullName: '', email: '', password: '', confirmPassword: '', role
 
 export default function RegisterPage() {
   useDocumentTitle('Register');
-  const { isAuthenticated, role, signUp } = useAuth();
+  const { isAuthenticated, role, register } = useAuth();
   const location = useLocation();
   const toast = useToast();
   const formRef = useRef(null);
@@ -30,6 +30,7 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState(''); // set when the account exists but the email must be confirmed first
 
   useEffect(() => {
     if (Object.keys(errors).length) formRef.current?.querySelector('[aria-invalid="true"]')?.focus();
@@ -52,14 +53,33 @@ export default function RegisterPage() {
     setSubmitting(true);
     setFormError('');
     try {
-      const user = await signUp({ fullName: values.fullName, email: values.email, password: values.password, role: values.role });
+      const user = await register({ fullName: values.fullName, email: values.email, password: values.password, role: values.role });
       toast.success(`Welcome to RE:WEAR, ${user.fullName.split(' ')[0]}.`, { title: 'Account created' });
     } catch (err) {
-      if (err.fields && Object.keys(err.fields).length) setErrors(err.fields);
-      else setFormError('We could not create your account. Please try again.');
+      if (err?.code === 'email_confirmation_required') {
+        // Not signed in yet: show the "check your email" state instead of a form error.
+        setConfirmEmail(values.email.trim());
+      } else if (err?.fields && Object.keys(err.fields).length) {
+        setErrors(err.fields);
+      } else {
+        setFormError(authErrorMessage(err, 'We could not create your account. Please try again.'));
+      }
       setSubmitting(false);
     }
   };
+
+  if (confirmEmail) {
+    return (
+      <AuthPageShell eyebrow="Almost there" title="Check your email" intro="Your account has been created.">
+        <p role="status" className="border border-dark-brown p-4 text-sm text-dark-brown">
+          We sent a confirmation link to <strong className="font-medium">{confirmEmail}</strong>. Open it to activate your account, then log in.
+        </p>
+        <div className="mt-6">
+          <Button to={ROUTES.login} state={location.state}>Go to log in</Button>
+        </div>
+      </AuthPageShell>
+    );
+  }
 
   return (
     <AuthPageShell eyebrow="Join the rack" title="Create an account" intro="Buy and sell one-of-a-kind preloved pieces, checked by our curators.">

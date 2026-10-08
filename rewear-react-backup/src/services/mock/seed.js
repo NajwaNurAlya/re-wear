@@ -14,12 +14,12 @@ export const demoUsers = [
 ];
 
 export const categories = [
-  { id: 'cat-outerwear', slug: 'outerwear', name: 'Outerwear' },
-  { id: 'cat-tops', slug: 'tops', name: 'Tops' },
-  { id: 'cat-bottoms', slug: 'bottoms', name: 'Bottoms' },
-  { id: 'cat-dresses', slug: 'dresses', name: 'Dresses' },
-  { id: 'cat-knitwear', slug: 'knitwear', name: 'Knitwear' },
-  { id: 'cat-accessories', slug: 'accessories', name: 'Accessories' },
+  { id: 'cat-outerwear', slug: 'outerwear', name: 'Outerwear', description: 'Jackets, coats and layers made for repeat wear.', sortOrder: 0 },
+  { id: 'cat-tops', slug: 'tops', name: 'Tops', description: 'Shirts, blouses and everyday pieces for the upper half.', sortOrder: 1 },
+  { id: 'cat-bottoms', slug: 'bottoms', name: 'Bottoms', description: 'Trousers, skirts and the pieces that complete a silhouette.', sortOrder: 2 },
+  { id: 'cat-dresses', slug: 'dresses', name: 'Dresses', description: 'One-piece finds, from easy day dresses to occasionwear.', sortOrder: 3 },
+  { id: 'cat-knitwear', slug: 'knitwear', name: 'Knitwear', description: 'Cardigans and jumpers with texture, warmth and history.', sortOrder: 4 },
+  { id: 'cat-accessories', slug: 'accessories', name: 'Accessories', description: 'Bags and finishing pieces with another story to tell.', sortOrder: 5 },
 ];
 
 // Each product gets a garment illustration plus a close-up of its label (the hover photo).

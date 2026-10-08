@@ -29,7 +29,7 @@ export default function OrdersPage() {
               <li key={order.id} className="grid gap-4 py-5 sm:grid-cols-[1fr_auto] sm:items-center">
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <Link to={ROUTES.order(order.id)} className="font-medium link-underline">{order.id}</Link>
+                    <Link to={ROUTES.order(order.id)} className="font-medium link-underline">{order.orderNumber ?? order.id}</Link>
                     <StatusBadge type="order" status={order.status} />
                   </div>
                   <p className="mt-2 text-sm text-brown">{formatDate(order.createdAt)} · {order.items.length} {order.items.length === 1 ? 'piece' : 'pieces'}</p>
@@ -44,7 +44,7 @@ export default function OrdersPage() {
           </ul>
         )}
       </div>
-      <p className="mt-6 text-xs leading-relaxed text-brown">Demo orders are stored in this browser only and are not sent to a seller.</p>
+      <p className="mt-6 text-xs leading-relaxed text-brown">Orders are listed newest first.</p>
     </section>
   );
 }

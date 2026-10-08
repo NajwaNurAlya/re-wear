@@ -22,7 +22,7 @@ function CategoryRows({ categories, loading }) {
       {categories.map((c) => (
         <li key={c.id} className="border-b border-beige">
           <Link
-            to={ROUTES.exploreWith({ category: c.id })}
+            to={ROUTES.exploreWith({ category: c.slug ?? c.id })}
             className="group flex items-baseline justify-between gap-4 py-4 transition-colors hover:bg-beige/40 md:py-5"
           >
             <span className="font-serif text-2xl transition-transform duration-200 ease-soft group-hover:translate-x-1 md:text-3xl">

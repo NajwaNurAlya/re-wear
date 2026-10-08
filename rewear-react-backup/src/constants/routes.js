@@ -41,6 +41,9 @@ export const ROUTES = {
     curation: '/admin/curation',
     users: '/admin/users',
     categories: '/admin/categories',
+    editorial: '/admin/editorial',
+    newEditorial: '/admin/editorial/new',
+    editEditorial: (id = ':id') => `/admin/editorial/${id}/edit`,
     orders: '/admin/orders',
   },
 

@@ -1,59 +1,63 @@
-import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useMemo } from 'react';
 import { PRODUCT_STATUS } from '@/constants';
+import { useShoppingList } from '@/hooks/useShoppingList';
+import { useToast } from '@/hooks/useToast';
+import { cartService, localCart } from '@/services';
 
 export const CartContext = createContext(null);
 
-const STORAGE_KEY = 'rewear.cart';
-
-// Every piece is one of a kind, so the cart holds each piece at most once (no quantities).
+// Every piece is one of a kind, so the bag holds each piece at most once (no quantities).
 // It keeps a small snapshot of the piece so the cart page can render without refetching.
-const snapshot = (p) => ({ id: p.id, title: p.title, brand: p.brand, price: p.price, size: p.size, sellerId: p.sellerId, image: p.images?.[0] ?? null });
+const snapshot = (p) => ({ id: p.id, title: p.title, brand: p.brand, price: p.price, size: p.size, sellerId: p.sellerId, image: p.images?.[0] ?? null, status: p.status });
 
-function load() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(raw) ? raw.filter((i) => i && typeof i.id === 'string') : [];
-  } catch {
-    return [];
-  }
-}
+// A piece can sell while it sits in somebody's bag. Those lines stay visible but are not part of the order.
+const isAvailable = (item) => !item.status || item.status === PRODUCT_STATUS.APPROVED;
 
 /**
- * STEP 7 FOUNDATION: in-browser cart (localStorage). Replaced by the Supabase-backed
- * cart in Step 9/12 behind the same API.
+ * The bag. Signed-in buyers and sellers keep it in their account (Supabase); guests, admins and mock mode keep it in
+ * this browser. Same API either way:
  *   const cart = useCart();
- *   cart.add(product)  -> { ok: true } | { ok: false, reason: 'sold' | 'in-cart' }
+ *   cart.add(product)  -> { ok: true } | { ok: false, reason: 'sold' | 'in-cart' | 'own' }
+ *   cart.items         every line, including pieces that sold since (item.status === 'sold')
+ *   cart.available     the lines that can still be ordered; `total` and checkout use these
+ *   cart.refresh()     re-reads the bag from the server
  */
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(load);
+  const toast = useToast();
+  const onError = useCallback((kind) => {
+    toast.error(
+      kind === 'load' ? 'Your bag could not be loaded. Please refresh the page.' : 'That change could not be saved. Please try again.',
+      { title: 'Bag' }
+    );
+  }, [toast]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch {
-      /* storage unavailable (private mode): the cart still works for this session */
-    }
-  }, [items]);
-
-  const has = useCallback((id) => items.some((i) => i.id === id), [items]);
+  const list = useShoppingList({ local: localCart, remote: cartService, onError });
+  const { items, userId, addItem, removeItem, clearItems, refresh, syncing } = list;
 
   const add = useCallback(
     (product) => {
       if (product.status === PRODUCT_STATUS.SOLD) return { ok: false, reason: 'sold' };
-      if (items.some((i) => i.id === product.id)) return { ok: false, reason: 'in-cart' };
-      setItems((list) => [...list, snapshot(product)]);
-      return { ok: true };
+      if (userId && product.sellerId === userId) return { ok: false, reason: 'own' };
+      return addItem(snapshot(product)) ? { ok: true } : { ok: false, reason: 'in-cart' };
     },
-    [items]
+    [addItem, userId]
   );
 
-  const remove = useCallback((id) => setItems((list) => list.filter((i) => i.id !== id)), []);
-  const clear = useCallback(() => setItems([]), []);
-
-  const value = useMemo(
-    () => ({ items, count: items.length, total: items.reduce((sum, i) => sum + i.price, 0), has, add, remove, clear }),
-    [items, has, add, remove, clear]
-  );
+  const value = useMemo(() => {
+    const available = items.filter(isAvailable);
+    return {
+      items,
+      available,
+      count: items.length,
+      total: available.reduce((sum, i) => sum + i.price, 0),
+      syncing,
+      has: list.has,
+      add,
+      remove: removeItem,
+      clear: clearItems,
+      refresh,
+    };
+  }, [items, syncing, list.has, add, removeItem, clearItems, refresh]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

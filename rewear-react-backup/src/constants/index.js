@@ -24,6 +24,12 @@ export const ORDER_STATUS = {
   CANCELLED: 'cancelled',
 };
 
+export const ARTICLE_STATUS = {
+  DRAFT: 'draft',
+  PUBLISHED: 'published',
+  ARCHIVED: 'archived',
+};
+
 // Happy-path order used by the OrderTimeline (cancelled is shown separately).
 export const ORDER_FLOW = ['pending', 'paid', 'processing', 'shipped', 'completed'];
 

@@ -7,16 +7,12 @@ import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useToast } from '@/hooks/useToast';
-import { postAuthRoute } from '@/lib/auth';
+import { authErrorMessage, postAuthRoute } from '@/lib/auth';
 import { validateLogin } from '@/lib/validators';
-import { authService } from '@/services';
-
-// Demo accounts exist only on the mock adapter; the Supabase adapter does not export them.
-const DEMO_ACCOUNTS = authService.demoAccounts ?? [];
 
 export default function LoginPage() {
   useDocumentTitle('Log in');
-  const { isAuthenticated, role, signIn } = useAuth();
+  const { isAuthenticated, role, login } = useAuth();
   const location = useLocation();
   const toast = useToast();
   const formRef = useRef(null);
@@ -49,10 +45,13 @@ export default function LoginPage() {
     setSubmitting(true);
     setFormError('');
     try {
-      const user = await signIn({ email: values.email, password: values.password });
-      toast.success(`Welcome back, ${user.fullName.split(' ')[0]}.`);
+      const user = await login({ email: values.email, password: values.password });
+      if (user.role) toast.success(`Welcome back, ${user.fullName.split(' ')[0]}.`);
+      else toast.error('You are signed in, but your account profile could not be loaded.'); // profile missing or unreadable: no role, no access
     } catch (err) {
-      setFormError(err.code === 'invalid_credentials' ? err.message : 'We could not log you in. Please try again.');
+      // AuthError messages are written for end users (invalid credentials, unconfirmed email, network, rate limit...).
+      if (err?.fields && Object.keys(err.fields).length) setErrors(err.fields);
+      else setFormError(authErrorMessage(err, 'We could not log you in. Please try again.'));
       setSubmitting(false);
     }
   };
@@ -96,34 +95,6 @@ export default function LoginPage() {
         </Link>
       </p>
 
-      {DEMO_ACCOUNTS.length > 0 && (
-        <section aria-labelledby="demo-title" className="mt-10 border-t border-beige pt-6">
-          <h2 id="demo-title" className="title">Demo accounts</h2>
-          <p className="mt-1 text-meta">For testing only. Choose one to fill the form, then log in.</p>
-          <ul className="mt-4 flex flex-col">
-            {DEMO_ACCOUNTS.map((a) => (
-              <li key={a.email} className="flex items-center justify-between gap-3 border-b border-beige py-3 text-sm">
-                <span className="min-w-0">
-                  <span className="tag-label">{a.role}</span>
-                  <span className="mt-1 block truncate">{a.email}</span>
-                  <span className="block text-meta">{a.password}</span>
-                </span>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    setValues({ email: a.email, password: a.password });
-                    setErrors({});
-                    setFormError('');
-                  }}
-                >
-                  Use <span className="sr-only">{a.role} account</span>
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </AuthPageShell>
   );
 }

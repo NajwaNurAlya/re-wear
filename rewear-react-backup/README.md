@@ -42,7 +42,7 @@ Pages never import seed data directly. They call `@/services`, which picks an ad
 | `services/mock/*Service.js` | Mock adapters. Public listings return approved pieces only, so pending items never leak |
 | `hooks/useAsync.js` | `const { data, loading, error, reload } = useAsync(() => service.fn(), [deps])` |
 
-The Supabase adapter (`services/supabase`) arrives in Step 12 and must return the same shapes.
+Supabase adapters live in `services/supabase` and return the same shapes as the mock. All services have one (Step 3): auth, profiles, members list, products, categories, editorial, bag, wishlist and orders. See `DEPLOY.md` to go live.
 
 ## Step 5 pages and components
 | Route | Page |

@@ -3,6 +3,7 @@ import SectionHeader from '@/components/common/SectionHeader';
 import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';
 import { ChevronIcon, HeartIcon } from '@/components/ui/icons';
+import AdminProductStatusAction from '@/components/product/AdminProductStatusAction';
 import ProductBadge from '@/components/product/ProductBadge';
 import ProductGallery from '@/components/product/ProductGallery';
 import ProductGrid from '@/components/product/ProductGrid';
@@ -129,6 +130,7 @@ export default function ProductDetailPage() {
     const result = cart.add(product);
     if (result.ok) toast.success(`“${product.title}” is in your cart.`, { title: 'Added to cart' });
     else if (result.reason === 'in-cart') toast.info('Every piece is one of a kind, so it is already in your cart.');
+    else if (result.reason === 'own') toast.info('This is your own listing, so it cannot be added to a cart.');
     else toast.error('This piece has already been sold.');
   };
 
@@ -138,7 +140,7 @@ export default function ProductDetailPage() {
   };
 
   const facts = [
-    ['Category', category ? <Link to={ROUTES.exploreWith({ category: category.id })} className="link-underline">{category.name}</Link> : '—'],
+    ['Category', category ? <Link to={ROUTES.exploreWith({ category: category.slug ?? category.id })} className="link-underline">{category.name}</Link> : '—'],
     [
       'Style',
       product.styles?.length
@@ -184,6 +186,15 @@ export default function ProductDetailPage() {
               {product.era && <ProductBadge>{product.era}</ProductBadge>}
               {product.condition && <ProductBadge>{labelOf(CONDITIONS, product.condition)}</ProductBadge>}
             </div>
+
+            {isAdmin && (
+              <div className="mt-8 border-y border-beige py-5">
+                <p className="text-meta uppercase tracking-[0.16em]">Admin status</p>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <AdminProductStatusAction product={product} onChanged={reload} size="md" />
+                </div>
+              </div>
+            )}
 
             {/* Purchase */}
             <div className="mt-8">

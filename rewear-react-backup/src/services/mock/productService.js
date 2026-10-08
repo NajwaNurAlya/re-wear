@@ -4,6 +4,7 @@ import { products } from './seed';
 
 const SELLER_PRODUCTS_KEY = 'rewear.seller-products';
 const PRODUCT_OVERRIDES_KEY = 'rewear.product-overrides';
+const ORDERS_KEY = 'rewear.orders';
 
 function readList(key) {
   try {
@@ -19,6 +20,15 @@ function readOverrides() {
   catch { return {}; }
 }
 
+function readOrders() {
+  try {
+    const value = JSON.parse(localStorage.getItem(ORDERS_KEY));
+    return Array.isArray(value) ? value : [];
+  } catch {
+    return [];
+  }
+}
+
 function allProducts() {
   const overrides = readOverrides();
   const merged = new Map(products.map((product) => [product.id, product]));
@@ -32,7 +42,7 @@ function allProducts() {
 export const isPublic = (p, { includeSold = false } = {}) =>
   p.status === PRODUCT_STATUS.APPROVED || (includeSold && p.status === PRODUCT_STATUS.SOLD);
 
-const copy = (p) => ({ ...p, images: [...p.images], styles: [...p.styles], measurements: { ...p.measurements } });
+const copy = (p) => ({ ...p, images: [...(p.images ?? [])], styles: [...(p.styles ?? [])], measurements: { ...(p.measurements ?? {}) } });
 
 /**
  * List public pieces. Newest first unless `sort` says otherwise.
@@ -109,15 +119,22 @@ async function imageData(photo) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error(`Could not read ${photo.file.name}.`));
+    reader.onerror = () => reject(new Error('A photo could not be saved. Please try again.'));
     reader.readAsDataURL(photo.file);
   });
+}
+
+function nextStatus(current, intent) {
+  if (current?.status === PRODUCT_STATUS.SOLD) throw new Error('Sold listings cannot be edited.');
+  if (current?.status === PRODUCT_STATUS.APPROVED || current?.status === PRODUCT_STATUS.PENDING) return PRODUCT_STATUS.PENDING;
+  return intent === 'submit' ? PRODUCT_STATUS.PENDING : PRODUCT_STATUS.DRAFT;
 }
 
 export async function saveSellerProduct(values, sellerId, intent, existingId) {
   const current = allProducts().find((product) => product.id === existingId);
   if (existingId && (!current || current.sellerId !== sellerId)) throw new Error('This listing is no longer available.');
   const images = await Promise.all((values.images ?? []).map(imageData));
+  const status = nextStatus(current, intent);
   const product = {
     ...(current ?? {}),
     id: existingId ?? `seller-${Date.now().toString(36)}`,
@@ -129,12 +146,13 @@ export async function saveSellerProduct(values, sellerId, intent, existingId) {
     size: values.size,
     condition: values.condition,
     era: values.era,
-    styles: values.style ? [values.style] : [],
+    styles: Array.isArray(values.styles) ? values.styles : (values.style ? [values.style] : []),
+    material: values.material,
+    measurements: values.measurements ?? current?.measurements ?? {},
     price: Number(values.price) || 0,
     images,
-    measurements: current?.measurements ?? {},
-    featured: false,
-    status: intent === 'submit' ? PRODUCT_STATUS.PENDING : PRODUCT_STATUS.DRAFT,
+    featured: current?.featured ?? false,
+    status,
     createdAt: current?.createdAt ?? new Date().toISOString().slice(0, 10),
     rejectionReason: undefined,
   };
@@ -152,4 +170,34 @@ export async function setProductModeration(id, status, rejectionReason = '') {
   overrides[id] = { ...overrides[id], status, rejectionReason: rejectionReason || undefined };
   localStorage.setItem(PRODUCT_OVERRIDES_KEY, JSON.stringify(overrides));
   return { ...copy(product), status, rejectionReason: rejectionReason || undefined };
+}
+
+export async function setProductAvailability(id, status) {
+  if (![PRODUCT_STATUS.APPROVED, PRODUCT_STATUS.SOLD].includes(status)) {
+    throw new Error('Invalid product status.');
+  }
+  const product = allProducts().find((item) => item.id === id);
+  if (!product) return null;
+  if (![PRODUCT_STATUS.APPROVED, PRODUCT_STATUS.SOLD].includes(product.status)) {
+    throw new Error('Only approved or sold products can be updated manually.');
+  }
+  if (product.status === status) return copy(product);
+  if (product.status === PRODUCT_STATUS.APPROVED && status !== PRODUCT_STATUS.SOLD) {
+    throw new Error('Approved products can only be marked as sold.');
+  }
+  if (product.status === PRODUCT_STATUS.SOLD && status !== PRODUCT_STATUS.APPROVED) {
+    throw new Error('Sold products can only be restored to approved.');
+  }
+  if (status === PRODUCT_STATUS.APPROVED) {
+    const hasActiveOrder = readOrders().some((order) =>
+      order.status !== 'cancelled' && (order.items ?? []).some((item) => item.id === id)
+    );
+    if (hasActiveOrder) {
+      throw new Error('This product has an order. Use the order workflow before restoring it.');
+    }
+  }
+  const overrides = readOverrides();
+  overrides[id] = { ...overrides[id], status, rejectionReason: undefined };
+  localStorage.setItem(PRODUCT_OVERRIDES_KEY, JSON.stringify(overrides));
+  return { ...copy(product), status, rejectionReason: undefined };
 }

@@ -8,6 +8,7 @@ import { useCart } from '@/hooks/useCart';
 import { formatRupiah } from '@/lib/format';
 
 function CartLine({ item, onRemove }) {
+  const unavailable = Boolean(item.status) && item.status !== 'approved';
   return (
     <li className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-4 border-b border-beige py-5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-6">
       <Link to={ROUTES.product(item.id)} aria-label={`View ${item.title}`} className="product-photo relative block aspect-[4/5] overflow-hidden">
@@ -21,8 +22,10 @@ function CartLine({ item, onRemove }) {
         <div className="mt-2 flex flex-wrap gap-1.5">
           {item.size && <ProductBadge>{item.size}</ProductBadge>}
           <ProductBadge tone="soft">One of a kind</ProductBadge>
+          {unavailable && <ProductBadge>No longer available</ProductBadge>}
         </div>
-        <p className="mt-3 text-sm font-medium">{formatRupiah(item.price)}</p>
+        <p className={`mt-3 text-sm font-medium ${unavailable ? 'text-brown line-through' : ''}`}>{formatRupiah(item.price)}</p>
+        {unavailable && <p className="mt-1 text-xs text-brown">Someone else found this piece first. Remove it to continue.</p>}
         <Button variant="ghost" size="sm" onClick={() => onRemove(item.id)} className="mt-3 -ml-3">
           Remove
         </Button>
@@ -67,7 +70,9 @@ export default function CartPage() {
               <span className="font-medium">{formatRupiah(cart.total)}</span>
             </div>
             <p className="mt-3 text-meta">The total covers the listed pieces only.</p>
-            <Button to={ROUTES.checkout} fullWidth size="lg" className="mt-6">Continue to checkout</Button>
+            {cart.available.length > 0
+              ? <Button to={ROUTES.checkout} fullWidth size="lg" className="mt-6">Continue to checkout</Button>
+              : <Button disabled fullWidth size="lg" className="mt-6">Nothing available to order</Button>}
             <p className="mt-4 text-center text-xs leading-relaxed text-brown">One of a kind means there is only one available. Review the item details before checkout.</p>
           </aside>
         </div>

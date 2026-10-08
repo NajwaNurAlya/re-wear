@@ -1,4 +1,4 @@
-import { ORDER_STATUS, PRODUCT_STATUS } from '@/constants';
+import { ARTICLE_STATUS, ORDER_STATUS, PRODUCT_STATUS } from '@/constants';
 
 // Display metadata for statuses. Tones map to StatusBadge styles.
 // Labels are the user-facing words; the stored values live in constants/index.js.
@@ -20,7 +20,13 @@ export const ORDER_STATUS_META = {
   [ORDER_STATUS.CANCELLED]: { label: 'Cancelled', tone: 'brick', step: 'Order cancelled' },
 };
 
+export const ARTICLE_STATUS_META = {
+  [ARTICLE_STATUS.DRAFT]: { label: 'Draft', tone: 'draft' },
+  [ARTICLE_STATUS.PUBLISHED]: { label: 'Published', tone: 'moss' },
+  [ARTICLE_STATUS.ARCHIVED]: { label: 'Archived', tone: 'brick' },
+};
+
 export function getStatusMeta(type, status) {
-  const table = type === 'order' ? ORDER_STATUS_META : PRODUCT_STATUS_META;
+  const table = type === 'order' ? ORDER_STATUS_META : type === 'article' ? ARTICLE_STATUS_META : PRODUCT_STATUS_META;
   return table[status] ?? { label: String(status ?? 'Unknown'), tone: 'draft', step: String(status ?? '') };
 }

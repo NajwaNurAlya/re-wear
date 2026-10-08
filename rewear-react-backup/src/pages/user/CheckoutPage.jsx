@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/useToast';
 import { formatRupiah } from '@/lib/format';
-import { orderService } from '@/services';
+import { isLive, orderService } from '@/services';
 
 const INITIAL = { recipient: '', phone: '', address: '', city: '', postalCode: '', paymentMethod: '' };
 
@@ -31,19 +31,22 @@ export default function CheckoutPage() {
     try {
       const order = await orderService.createOrder({
         buyer: user,
-        items: cart.items,
+        items: cart.available,
         address: { recipient: values.recipient, phone: values.phone, line: values.address, city: values.city, postalCode: values.postalCode },
         paymentMethod: values.paymentMethod,
       });
       cart.clear();
       navigate(ROUTES.orderConfirmation(order.id), { replace: true });
     } catch (e) {
-      setError(e.message || 'We could not place this demo order. Please try again.');
+      if (e.code === 'PRODUCT_UNAVAILABLE') cart.refresh();
+      const message = e.message || 'We could not place this order. Please try again.';
+      setError(message);
+      toast.error(message, { title: 'Order not placed' });
       setBusy(false);
     }
   };
 
-  if (!cart.items.length) {
+  if (!cart.available.length) {
     return (
       <section className="container-page py-10 md:py-14">
         <p className="text-meta uppercase tracking-[0.16em]">Checkout</p>
@@ -78,7 +81,7 @@ export default function CheckoutPage() {
           <section aria-labelledby="payment-title" className="grid gap-4">
             <div>
               <h2 id="payment-title" className="title">Payment method</h2>
-              <p className="mt-1 text-sm text-brown">Choose a method for this demo order.</p>
+              <p className="mt-1 text-sm text-brown">Choose how you would like to pay.</p>
             </div>
             {PAYMENT_METHODS.map((method) => (
               <label key={method.value} className="flex cursor-pointer items-center gap-3 border border-beige p-4 transition-colors has-[:checked]:border-dark-brown has-[:checked]:bg-beige/25">
@@ -90,14 +93,14 @@ export default function CheckoutPage() {
           {error && <p role="alert" className="text-sm text-brick">{error}</p>}
           <div className="flex flex-wrap items-center justify-between gap-4 border-t border-beige pt-5">
             <Link to={ROUTES.cart} className="link-underline text-sm">Back to bag</Link>
-            <Button type="submit" size="lg" loading={busy}>Place demo order</Button>
+            <Button type="submit" size="lg" loading={busy}>Place order</Button>
           </div>
         </form>
 
         <aside className="h-fit border border-beige bg-white/35 p-5 md:p-6" aria-labelledby="order-summary-title">
           <h2 id="order-summary-title" className="title">Your pieces</h2>
           <ul className="mt-4 divide-y divide-beige">
-            {cart.items.map((item) => (
+            {cart.available.map((item) => (
               <li key={item.id} className="flex justify-between gap-4 py-3 first:pt-0 text-sm">
                 <span className="min-w-0">{item.title}<span className="block text-meta">One of a kind · {item.size}</span></span>
                 <span className="shrink-0 font-medium">{formatRupiah(item.price)}</span>
@@ -106,7 +109,9 @@ export default function CheckoutPage() {
           </ul>
           <p className="mt-3 flex justify-between border-t border-beige pt-4 text-sm font-medium"><span>Subtotal</span><span>{formatRupiah(cart.total)}</span></p>
           <p className="mt-4 border-l-2 border-ochre bg-beige/30 p-3 text-xs leading-relaxed text-brown">
-            Demo checkout only. No payment is collected and this order is saved only in this browser. Shipping fees and return policy are not configured yet.
+            {isLive
+              ? 'No payment is taken on this site yet: your order is recorded on your account and the curators follow up on payment and delivery. Shipping fees and return policy are not configured yet.'
+              : 'Demo checkout only. No payment is collected and this order is saved only in this browser. Shipping fees and return policy are not configured yet.'}
           </p>
         </aside>
       </div>

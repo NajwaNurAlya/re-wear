@@ -8,6 +8,8 @@ import { BagIcon, ChevronIcon, CloseIcon, HeartIcon, MenuIcon, SearchIcon, UserI
 import { ROLES } from '@/constants';
 import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/useToast';
+import { authErrorMessage } from '@/lib/auth';
 import { cx } from '@/lib/cx';
 
 const navLink = ({ isActive }) =>
@@ -75,7 +77,7 @@ function AccountMenu({ user, items, onSignOut }) {
             <div className="border-b border-beige px-4 py-2.5">
               <p className="truncate text-sm font-medium">{user.fullName}</p>
               <p className="truncate text-meta">{user.email}</p>
-              <span className="tag-label mt-1.5">{user.role}</span>
+              <span className="tag-label mt-1.5">{user.role ?? 'No profile'}</span>
             </div>
           )}
           {items.map((i) => (
@@ -98,7 +100,8 @@ function AccountMenu({ user, items, onSignOut }) {
  * Search submits to  /explore?q=<query>  (the Explore page reads `q` in Step 6).
  */
 export default function Navbar({ cartCount = 0, wishlistCount = 0 }) {
-  const { isAuthenticated, role, user, signOut } = useAuth();
+  const { isAuthenticated, role, user, loading, logout } = useAuth();
+  const toast = useToast();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -112,7 +115,7 @@ export default function Navbar({ cartCount = 0, wishlistCount = 0 }) {
     setSearchOpen(false);
   }, [pathname]);
 
-  const canShop = role !== ROLES.ADMIN; // admins have no cart or wishlist
+  const canShop = !isAuthenticated || role === ROLES.BUYER || role === ROLES.SELLER; // admins (and signed-in people without a profile role) have no cart or wishlist
   const dashboard =
     role === ROLES.SELLER
       ? { label: 'Seller studio', to: ROUTES.seller.root }
@@ -129,7 +132,11 @@ export default function Navbar({ cartCount = 0, wishlistCount = 0 }) {
   const handleSignOut = async () => {
     setMenuOpen(false);
     navigate(ROUTES.home, { replace: true });
-    await signOut();
+    try {
+      await logout();
+    } catch (err) {
+      toast.error(authErrorMessage(err, 'We could not log you out. Please try again.'));
+    }
   };
 
   const closeSearch = () => {
@@ -176,7 +183,10 @@ export default function Navbar({ cartCount = 0, wishlistCount = 0 }) {
             )}
 
             <div className="ml-2 hidden items-center gap-2 md:flex">
-              {isAuthenticated ? (
+              {loading ? (
+                // Session still being read: reserve the space instead of flashing Log in / Register at a signed-in user.
+                <div aria-hidden="true" className="h-11 w-40" />
+              ) : isAuthenticated ? (
                 <AccountMenu user={user} items={accountItems} onSignOut={handleSignOut} />
               ) : (
                 <>

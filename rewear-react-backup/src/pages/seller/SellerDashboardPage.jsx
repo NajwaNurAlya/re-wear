@@ -54,7 +54,7 @@ export default function SellerDashboardPage() {
             ))}
           </ul>
         )}
-        <p className="mt-5 text-xs leading-relaxed text-brown">Demo listings and order records are saved in this browser only.</p>
+        <p className="mt-5 text-xs leading-relaxed text-brown">Listings and order records are saved to your seller account.</p>
       </section>
     </section>
   );

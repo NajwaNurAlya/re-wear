@@ -28,7 +28,7 @@ export default function AdminDashboardPage() {
       <div className="mt-9 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <DashboardCard label="Awaiting review" value={queue.length} hint="Pieces in the curation queue" tone="attention" to={ROUTES.admin.curation} loading={loading} />
         <DashboardCard label="Live pieces" value={live.length} hint="Approved and visible" to={ROUTES.admin.products} loading={loading} />
-        <DashboardCard label="Orders" value={orders.length} hint="Demo orders recorded locally" to={ROUTES.admin.orders} loading={loading} />
+        <DashboardCard label="Orders" value={orders.length} hint="Placed by buyers" to={ROUTES.admin.orders} loading={loading} />
         <DashboardCard label="Members" value={users.length} hint={`${categories.length} product categories`} to={ROUTES.admin.users} loading={loading} />
       </div>
 
@@ -39,10 +39,10 @@ export default function AdminDashboardPage() {
         </section>
         <section aria-labelledby="recent-orders-title">
           <div className="flex items-end justify-between gap-4 border-t border-dark-brown pt-5"><div><h2 id="recent-orders-title" className="title">Recent orders</h2><p className="mt-2 text-sm text-brown">Latest activity in the demo shop.</p></div><Link to={ROUTES.admin.orders} className="link-underline text-sm">All orders</Link></div>
-          {orders.length ? <ul className="mt-4 divide-y divide-beige border-y border-beige">{orders.slice(0, 4).map((order) => <li key={order.id} className="flex items-center justify-between gap-3 py-4"><div><p className="font-medium">{order.id}</p><p className="mt-1 text-meta">{order.buyerName} · {formatDate(order.createdAt)}</p></div><StatusBadge type="order" status={order.status} /></li>)}</ul> : !loading && <EmptyState compact title="No orders yet" description="Demo orders appear here after checkout is completed." action={<Button to={ROUTES.admin.orders} variant="secondary">View order desk</Button>} />}
+          {orders.length ? <ul className="mt-4 divide-y divide-beige border-y border-beige">{orders.slice(0, 4).map((order) => <li key={order.id} className="flex items-center justify-between gap-3 py-4"><div><p className="font-medium">{order.orderNumber ?? order.id}</p><p className="mt-1 text-meta">{order.buyerName} · {formatDate(order.createdAt)}</p></div><StatusBadge type="order" status={order.status} /></li>)}</ul> : !loading && <EmptyState compact title="No orders yet" description="Orders appear here after a buyer completes checkout." action={<Button to={ROUTES.admin.orders} variant="secondary">View order desk</Button>} />}
         </section>
       </div>
-      <p className="mt-10 text-xs leading-relaxed text-brown">Admin changes in this prototype are saved in this browser only. No live buyers or sellers are notified.</p>
+      <p className="mt-10 text-xs leading-relaxed text-brown">Changes are recorded on the order or piece. Buyers and sellers are not notified by email.</p>
     </section>
   );
 }

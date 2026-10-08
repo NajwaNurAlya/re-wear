@@ -37,6 +37,8 @@ import AdminCurationPage from '@/pages/admin/AdminCurationPage';
 import AdminUsersPage from '@/pages/admin/AdminUsersPage';
 import AdminCategoriesPage from '@/pages/admin/AdminCategoriesPage';
 import AdminOrdersPage from '@/pages/admin/AdminOrdersPage';
+import AdminEditorialPage from '@/pages/admin/AdminEditorialPage';
+import AdminEditorialFormPage from '@/pages/admin/AdminEditorialFormPage';
 
 // Dev-only component gallery. `import.meta.env.DEV` is false in production builds,
 // so this import is removed from the bundle entirely.
@@ -107,6 +109,9 @@ export default function App() {
           <Route element={<DashboardLayout area="admin" />}>
             <Route path={ROUTES.admin.root} element={<AdminDashboardPage />} />
             <Route path={ROUTES.admin.products} element={<AdminProductsPage />} />
+            <Route path={ROUTES.admin.editorial} element={<AdminEditorialPage />} />
+            <Route path={ROUTES.admin.newEditorial} element={<AdminEditorialFormPage />} />
+            <Route path={ROUTES.admin.editEditorial()} element={<AdminEditorialFormPage />} />
             <Route path={ROUTES.admin.curation} element={<AdminCurationPage />} />
             <Route path={ROUTES.admin.users} element={<AdminUsersPage />} />
             <Route path={ROUTES.admin.categories} element={<AdminCategoriesPage />} />
